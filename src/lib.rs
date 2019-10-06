@@ -2,6 +2,7 @@ pub trait Point { // 3Dへの拡張性のため用意
     fn distance(self,other:Self) -> f32;
 }
 
+#[derive(Debug,Clone,Copy)]
 pub struct Point2D { // 二次元の点
     x:f32,
     y:f32,
@@ -12,20 +13,54 @@ impl Point2D {
         Self{x:x,y:y}
     }
 }
-
-pub struct Triangle<T:Point> {// 三次元空間上の点
-    p1:T,
-    p2:T,
-    p3:T,
+impl std::ops::Sub for Point2D{
+    type Output = Point2D;
+    fn sub(self, other: Point2D) -> Self::Output{
+        Point2D{
+            x: self.x - other.x,
+            y: self.y - other.y,
+        }
+    }
 }
 
-impl<T:Point> Triangle<T>{
-    pub fn new(p1:T,p2:T,p3:T) -> Self {
-        Self{
-            p1:p1,
-            p2:p2,
-            p3:p3,
+pub struct Triangle {// 三次元空間上の点 必ず半時計回りに格納される
+    p1:Point2D,
+    p2:Point2D,
+    p3:Point2D,
+}
+
+impl Triangle{
+    fn is_right_hand(p1:Point2D,p2:Point2D,p3:Point2D) -> bool {
+        let v1 = p2-p1;
+        let v2 = p3-p1;
+        v1.x*v2.y - v1.y*v2.x > 0.
+    }
+    pub fn new(p1:Point2D,p2:Point2D,p3:Point2D) -> Self {
+        if Triangle::is_right_hand(p1, p2, p3) {
+            Self{
+                p1:p1,
+                p2:p2,
+                p3:p3,
+            }
+        }else{
+            Self{
+                p1:p1,
+                p2:p3,
+                p3:p2,
+            }
         }
+    }
+    pub fn contain_in_circumscribed(&self,p:Point2D)->bool{
+        // http://www.thothchildren.com/chapter/5bdedb4341f88f267247fdd6
+        let p1 = self.p1;
+        let p2 = self.p2;
+        let p3 = self.p3;
+        let mat = [
+            [p1.x-p.x,p1.y-p.y,(p1.x-p.x).powf(2.) + (p1.y-p.y).powf(2.)],
+            [p2.x-p.x,p2.y-p.y,(p2.x-p.x).powf(2.) + (p2.y-p.y).powf(2.)],
+            [p3.x-p.x,p1.y-p.y,(p1.x-p.x).powf(2.) + (p1.y-p.y).powf(2.)],
+        ];
+        mat.det()>0.
     }
 }
 
@@ -36,7 +71,7 @@ impl Point for Point2D {
 }
 
 pub struct DelaunayTriangles{ // TODO ある点周りの三角形を求めやすいデータ構造が理想的
-    triangles_set:Vec<Triangle<Point2D>>,
+    triangles_set:Vec<Triangle>,
 }
 
 impl DelaunayTriangles {
@@ -44,6 +79,18 @@ impl DelaunayTriangles {
         Self{
             triangles_set:Vec::new()
         }
+    }
+}
+
+type Mat3 = [[f32;3];3];
+trait MatOps{
+    fn det(&self) -> f32 ;
+}
+impl MatOps for Mat3{
+    fn det(&self) -> f32 {
+        let a = self;
+        a[0][2]*a[1][0]*a[2][1] + a[0][1]*a[1][2]*a[2][0] + a[0][0]*a[1][1]*a[2][2]
+            - a[0][0]*a[1][2]*a[2][1] - a[0][1]*a[1][0]*a[2][2] - a[0][2]*a[1][1]*a[2][0]
     }
 }
 
@@ -116,10 +163,20 @@ mod tests {
             assert!((0. < s+t && s+t < 1.));
         }
     }
+    fn test_contain_in_circumscribed(){
+        use super::*;
+        let tri = Triangle::new(
+            Point2D::new(3. ,2. ),
+            Point2D::new(1. ,4. ),
+            Point2D::new(3. ,5. ));
+        assert!(tri.contain_in_circumscribed(Point2D::new(3.,4.)));
+        assert!(!tri.contain_in_circumscribed(Point2D::new(2.,1.)));
+        assert!(!tri.contain_in_circumscribed(Point2D::new(2.,3.)));
+    }
 }
 
 
-fn external_triangle(plist:&[Point2D]) -> Triangle<Point2D> {
+fn external_triangle(plist:&[Point2D]) -> Triangle {
     let rec = large_rectangle(&plist);
     let (width,height) = (rec.2-rec.0,rec.3-rec.1);
     
