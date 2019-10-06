@@ -47,7 +47,7 @@ impl DelaunayTriangles {
     }
 }
 
-fn large_rectangle(plist:&[Point2D]) -> (f32,f32,f32,f32){//全ての点を含む長方形
+fn large_rectangle(plist:&[Point2D]) -> (f32,f32,f32,f32){//全ての点を含む長方形 O(n)
     use std::f32::{INFINITY,NEG_INFINITY};
     let rec:(f32,f32,f32,f32) = plist.into_iter().fold((INFINITY,INFINITY,NEG_INFINITY,NEG_INFINITY),|acc,p|{ // x_min,y_min,x_max,y_max
         let (x_min,y_min,x_max,y_max);
@@ -104,7 +104,17 @@ mod tests {
             Point2D::new(2. ,-2. ),
             Point2D::new(12. ,1. )
         ];
-
+        let tri = external_triangle(&plist);
+        let v1 = (tri.p2.x-tri.p1.x,tri.p2.y-tri.p1.y);
+        let v2 = (tri.p3.x-tri.p1.x,tri.p3.y-tri.p1.y);
+        for p in &plist{ // TODO 逆行列を使ったがもう少しわかり易いテスト
+            let pv = (p.x-tri.p1.x,p.y-tri.p1.y);
+            let s = (v2.1*pv.0-v2.0*pv.1)/(v1.0*v2.1-v2.0*v1.1);
+            let t = (-v1.1*pv.0+v1.0*pv.1)/(v1.0*v2.1-v2.0*v1.1);
+            assert!((0.< s && s < 1.),"0<s<1: s={}",s);
+            assert!((0. < t && t < 1.),"0<t<1: t={}",t) ;
+            assert!((0. < s+t && s+t < 1.));
+        }
     }
 }
 
