@@ -1,6 +1,7 @@
 pub (crate) use crate::{Mat3,MatOps};
 use crate::Point2D;
 use crate::Edge;
+#[derive(PartialEq,Eq,Hash,Clone)]
 pub struct Triangle {// 三次元空間上の点 必ず半時計回りに格納される
     pub(crate) p1:Point2D,
     pub p2:Point2D,
@@ -35,6 +36,9 @@ impl Triangle{
             Edge::new(self.p3,self.p1)
         ]
     }
+    pub fn into_points(&self) -> [Point2D;3]{
+        [self.p1,self.p2,self.p3]
+    }
     pub fn contain_in_circumscribed(&self,p:&Point2D)->bool{
         // http://www.thothchildren.com/chapter/5bdedb4341f88f267247fdd6
         let p1 = self.p1;
@@ -46,6 +50,23 @@ impl Triangle{
             [p3.x-p.x,p1.y-p.y,(p1.x-p.x).powf(2.) + (p1.y-p.y).powf(2.)],
         ];
         mat.det()>0.
+    }
+    pub fn contain_edge(&self,edge:&Edge)-> bool{
+        let (p1,p2) = (edge.p1,edge.p2);
+        self.contain_point(&p1) && self.contain_point(&p2)
+    }
+    fn contain_point(&self,point:&Point2D) -> bool{
+        self.p1 == *point || self.p2==*point || self.p3==*point
+    }
+
+    pub fn find_other_point_by_edge(&self,edge:&Edge) -> Option<Point2D>{
+        // Warning!! Argment edge shold be include in the triangle
+        for p in self.into_points().iter(){
+            if !edge.has_point(p) {
+                return Some(*p)
+            }
+        }
+        return None
     }
 }
 

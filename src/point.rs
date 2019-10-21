@@ -1,8 +1,11 @@
+use std::hash::{Hash,Hasher};
+use std::cmp::Eq;
+use ordered_float::NotNan;
 pub trait Point { // 3Dへの拡張性のため用意
     fn distance(self,other:Self) -> f32;
 }
 
-#[derive(PartialEq,Debug,Clone,Copy)]
+#[derive(Debug,Clone,Copy)]
 pub struct Point2D { // 二次元の点
     pub x:f32,
     pub y:f32,
@@ -30,3 +33,17 @@ impl Point for Point2D {
     }
 }
 
+impl Hash for Point2D {
+    fn hash<H:Hasher>(&self,state:&mut H) {
+        NotNan::new(self.x).expect("Floating Point Error\nFound NaN").hash(state);
+        NotNan::new(self.y).expect("Floating Point Error\nFound NaN").hash(state);
+    }
+}
+impl PartialEq for Point2D {
+    fn eq(&self, other: &Self) -> bool {
+        NotNan::new(self.x).expect("Floating Point Error\nFound NaN")==
+        NotNan::new(self.y).expect("Floating Point Error\nFound NaN")
+    }
+}
+
+impl Eq for Point2D {}

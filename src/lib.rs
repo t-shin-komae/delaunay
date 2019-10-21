@@ -6,21 +6,73 @@ pub mod edge;
 pub use point::*;
 pub use triangle::*;
 pub use edge::*;
+use std::collections::HashSet;
 pub (crate) use utils::*;
 pub struct DelaunayTriangles{ // TODO ある点周りの三角形を求めやすいデータ構造が理想的
-    triangles_set:Vec<Triangle>,
+    triangles_set:HashSet<Triangle>,
 }
 
 impl DelaunayTriangles {
     pub fn new(large_triangle:Triangle) -> Self {
-        let mut triangles = Vec::new();
-        triangles.push(large_triangle);
+        let mut triangles:HashSet<Triangle> = HashSet::new();
+        triangles.insert(large_triangle);
         Self{
             triangles_set:triangles
         }
     }
-    pub fn add(&mut self,point:Point2D){
 
+    pub fn add(&mut self,point:Point2D){
+        let mut edges:Vec<Edge> =Vec::new();
+        self.triangles_set
+            .retain(|tri|{
+                if tri.contain_in_circumscribed(&point){
+                    let [e1,e2,e3] = tri.into_edges();
+                    edges.push(e1);
+                    edges.push(e2);
+                    edges.push(e3);
+                    return false;
+                }else{
+                    return true
+                }
+            }); // 線形探索なのでO(n)
+            // .filter(|tri| tri.contain_in_circumscribed(&point)) // 線形探索なのでO(n)
+            // .for_each(|tri| {
+            //           let [e1,e2,e3] = tri.into_edges();
+            //           edges.insert(e1);
+            //           edges.insert(e2);
+            //           edges.insert(e3);
+            //     }
+            // );
+        for tri in edges.iter().map(|e| Triangle::new(e.p1,e.p2,point)){
+            self.triangles_set.insert(tri);
+        }
+        
+        while let Some(edge) = edges.pop() {
+            let mut edge_contained:Vec<Triangle> = Vec::new();
+            self.triangles_set.retain(|tri| if tri.contain_edge(&edge){
+                //エッジを含む
+                edge_contained.push(tri.clone());
+                false
+            }else { // エッジを含まない
+                true
+            });// triangles_setからエッジを含む三角形を削除
+            if edge_contained.len() == 2 {
+                // TODO
+                let other_p0 = edge_contained[0].find_other_point_by_edge(&edge).unwrap();
+                let other_p1 = edge_contained[1].find_other_point_by_edge(&edge).unwrap();
+                if edge_contained[0].contain_in_circumscribed(&other_p1){
+                    let [p2,p3] = edge.into_points();
+                    let new_tri1 = Triangle::new(other_p0,other_p1,p2);
+                    let new_tri2 = Triangle::new(other_p0,other_p1,p3);
+                    self.triangles_set.insert(new_tri1);
+                    self.triangles_set.insert(new_tri2);
+                    edges.push(Edge::new(other_p0,p2));
+                    edges.push(Edge::new(other_p0,p3));
+                    edges.push(Edge::new(other_p1,p2));
+                    edges.push(Edge::new(other_p1,p3));
+                }
+            }
+        }
     }
 }
 
@@ -121,6 +173,6 @@ fn external_triangle(plist:&[Point2D]) -> Triangle {
 }
 
 pub fn delaunay(plist:&[Point2D]) -> DelaunayTriangles{
-    let dtri = DelaunayTriangles::new();
+    let dtri = DelaunayTriangles::new(external_triangle(plist));
     dtri
 }
