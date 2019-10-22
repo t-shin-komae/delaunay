@@ -30,9 +30,9 @@ impl Hash for Edge {
     fn hash<H: Hasher>(&self, state: &mut H) {
         // TODO なんとかしろこのクソ実装
         let padd = Point2D::new(self.p1.x+self.p2.x,self.p1.y+self.p2.y);
-        let psub = Point2D::new(self.p1.x*self.p2.x,self.p1.y*self.p2.y);
+        //let psub = Point2D::new(self.p1.x*self.p2.x,self.p1.y*self.p2.y);
         padd.hash(state);
-        psub.hash(state);
+        //psub.hash(state);
     }
 }
 #[cfg(test)]

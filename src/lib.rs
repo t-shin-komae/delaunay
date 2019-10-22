@@ -102,9 +102,9 @@ impl DelaunayTriangles {
 }
 
 
-fn large_rectangle(plist:&[Point2D]) -> (f32,f32,f32,f32){//全ての点を含む長方形 O(n)
-    use std::f32::{INFINITY,NEG_INFINITY};
-    let rec:(f32,f32,f32,f32) = plist.into_iter().fold((INFINITY,INFINITY,NEG_INFINITY,NEG_INFINITY),|acc,p|{ // x_min,y_min,x_max,y_max
+fn large_rectangle(plist:&[Point2D]) -> (f64,f64,f64,f64){//全ての点を含む長方形 O(n)
+    use std::f64::{INFINITY,NEG_INFINITY};
+    let rec:(f64,f64,f64,f64) = plist.into_iter().fold((INFINITY,INFINITY,NEG_INFINITY,NEG_INFINITY),|acc,p|{ // x_min,y_min,x_max,y_max
         let (x_min,y_min,x_max,y_max);
 
         if p.x < acc.0 {
@@ -185,16 +185,6 @@ mod tests {
     fn test_add_point(){
         use super::*;
         use rand::Rng;
-        use rand::distributions::{Distribution, Standard};
-        impl Distribution<Point2D> for Standard {
-            fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Point2D {
-                let (rand_x, rand_y) = rng.gen();
-                Point2D {
-                    x: rand_x,
-                    y: rand_y,
-                }
-            }
-        }
         let mut rng = rand::thread_rng();
         let mut delau = DelaunayTriangles::new(Triangle::new(
             Point2D::new(-10. ,10. ),
@@ -204,7 +194,7 @@ mod tests {
         delau.add(Point2D::new(0.,0.));
         let point_num = 50;
         let random_points:Vec<Point2D>= (0..point_num).map(|_|{
-            Point2D::new(rng.gen::<f32>()*3. ,rng.gen::<f32>()*3.)
+            Point2D::new(rng.gen::<f64>()*3. ,rng.gen::<f64>()*3.)
         }).collect();
         for p in random_points{
             delau.add(p);

@@ -1,18 +1,20 @@
 use std::hash::{Hash,Hasher};
 use std::cmp::Eq;
+use rand::Rng;
+use rand::distributions::{Distribution, Standard};
 use ordered_float::NotNan;
 pub trait Point { // 3Dへの拡張性のため用意
-    fn distance(self,other:Self) -> f32;
+    fn distance(self,other:Self) -> f64;
 }
 
 #[derive(Debug,Clone,Copy)]
 pub struct Point2D { // 二次元の点
-    pub x:f32,
-    pub y:f32,
+    pub x:f64,
+    pub y:f64,
 }
 
 impl Point2D {
-    pub fn new(x:f32,y:f32) -> Self {
+    pub fn new(x:f64,y:f64) -> Self {
         Self{x:x,y:y}
     }
 }
@@ -28,7 +30,7 @@ impl std::ops::Sub for Point2D{
 }
 
 impl Point for Point2D {
-    fn distance(self,other: Self) -> f32 {
+    fn distance(self,other: Self) -> f64 {
         (self.x-other.x).powf(2.) + (self.y-other.y).powf(2.)
     }
 }
@@ -58,5 +60,15 @@ mod tests{
         use super::*;
         let p1 = Point2D::new(3.,2.) ;
         assert!(p1==p1);
+    }
+}
+
+impl Distribution<Point2D> for Standard {
+    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Point2D {
+        let (rand_x, rand_y) = rng.gen();
+        Point2D {
+            x: rand_x,
+            y: rand_y,
+        }
     }
 }
