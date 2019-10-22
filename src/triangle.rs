@@ -1,11 +1,75 @@
 pub (crate) use crate::{Mat3,MatOps};
 use crate::Point2D;
 use crate::Edge;
-#[derive(PartialEq,Eq,Hash,Clone)]
+use std::hash::{Hash,Hasher};
+#[derive(Eq,Clone,Debug)]
 pub struct Triangle {// 三次元空間上の点 必ず半時計回りに格納される
     pub(crate) p1:Point2D,
     pub p2:Point2D,
     pub p3:Point2D,
+}
+
+impl PartialEq for Triangle {
+    fn eq(&self, other: &Self) -> bool {
+        if self.p1 == other.p1 {
+            self.p2 == other.p2 && self.p3 == other.p3
+        }else if self.p1 == other.p2{
+            self.p2 == other.p3 && self.p3 == other.p1
+        }else if self.p1 == other.p3 {
+            self.p2 == other.p1 && self.p3 == other.p2
+        }else{
+            false
+        }
+    }
+}
+impl Hash for Triangle{
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        let center = Point2D::new(self.p1.x+self.p2.x+self.p3.x,self.p1.y+self.p2.y+self.p3.y);
+        center.hash(state);
+    }
+}
+#[cfg(test)]
+mod tests{
+    #[test]
+    fn test_tri_eq() {
+        use super::*;
+        let p1 = Point2D::new(1.3,2.4);
+        let p2 = Point2D::new(1.8,1.4);
+        let p3 = Point2D::new(2.7,2.4);
+        for points in permutation3([p1,p2,p3]).iter(){
+            Triangle::new(points[0],points[1],points[2]);
+        }
+    }
+    fn permutation3<T:Copy>( a : [T;3]) -> [[T;3];6]{
+        [
+            [a[0],a[1],a[2]],
+            [a[0],a[2],a[1]],
+            [a[1],a[0],a[2]],
+            [a[1],a[2],a[0]],
+            [a[2],a[0],a[1]],
+            [a[2],a[1],a[0]],
+        ]
+    }
+
+    #[test]
+    fn test_contain_edge() {
+        use super::*;
+        let p1 = Point2D::new(1.3,2.4);
+        let p2 = Point2D::new(1.8,1.4);
+        let p3 = Point2D::new(2.7,2.4);
+        assert!(Triangle::new(p1,p2,p3).contain_edge(&Edge::new(p1,p2)))
+    }
+    #[test]
+    fn test_contain_point() {
+        use super::*;
+        let p1 = Point2D::new(1.3,2.4);
+        let p2 = Point2D::new(1.8,1.4);
+        let p3 = Point2D::new(2.7,2.4);
+        println!("{:?}",Triangle::new(p1,p2,p3));
+        assert!(Triangle::new(p1,p2,p3).contain_point(&p2));
+        assert!(Triangle::new(p1,p2,p3).contain_point(&p3));
+        assert!(Triangle::new(p1,p2,p3).contain_point(&p1));
+    }
 }
 
 impl Triangle{
@@ -47,7 +111,7 @@ impl Triangle{
         let mat:Mat3 = [
             [p1.x-p.x,p1.y-p.y,(p1.x-p.x).powf(2.) + (p1.y-p.y).powf(2.)],
             [p2.x-p.x,p2.y-p.y,(p2.x-p.x).powf(2.) + (p2.y-p.y).powf(2.)],
-            [p3.x-p.x,p1.y-p.y,(p1.x-p.x).powf(2.) + (p1.y-p.y).powf(2.)],
+            [p3.x-p.x,p3.y-p.y,(p3.x-p.x).powf(2.) + (p3.y-p.y).powf(2.)],
         ];
         mat.det()>0.
     }

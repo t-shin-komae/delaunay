@@ -42,8 +42,21 @@ impl Hash for Point2D {
 impl PartialEq for Point2D {
     fn eq(&self, other: &Self) -> bool {
         NotNan::new(self.x).expect("Floating Point Error\nFound NaN")==
-        NotNan::new(self.y).expect("Floating Point Error\nFound NaN")
+        NotNan::new(other.x).expect("Floating Point Error\nFound NaN") 
+        &&
+        NotNan::new(self.y).expect("Floating Point Error\nFound NaN")==
+        NotNan::new(other.y).expect("Floating Point Error\nFound NaN")
     }
 }
 
 impl Eq for Point2D {}
+
+#[cfg(test)]
+mod tests{
+    #[test]
+    fn test_point_eq() {
+        use super::*;
+        let p1 = Point2D::new(3.,2.) ;
+        assert!(p1==p1);
+    }
+}

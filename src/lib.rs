@@ -21,15 +21,30 @@ impl DelaunayTriangles {
         }
     }
 
+    pub fn into_points(&self) -> HashSet<Point2D>{
+        let mut points = HashSet::with_capacity(1000);
+        self.triangles_set.iter().for_each(|tri|{
+            points.insert(tri.p1);
+            points.insert(tri.p2);
+            points.insert(tri.p3);
+        });
+        points
+    }
+
     pub fn add(&mut self,point:Point2D){
-        let mut edges:Vec<Edge> =Vec::new();
+        let mut edges:HashSet<Edge> =HashSet::new();
         self.triangles_set
             .retain(|tri|{
                 if tri.contain_in_circumscribed(&point){
                     let [e1,e2,e3] = tri.into_edges();
-                    edges.push(e1);
-                    edges.push(e2);
-                    edges.push(e3);
+                    let mut dup_remove = |e:Edge|{
+                        if !edges.insert(e.clone()){
+                            edges.remove(&e);
+                        }
+                    };
+                    dup_remove(e1);
+                    dup_remove(e2);
+                    dup_remove(e3);
                     return false;
                 }else{
                     return true
@@ -46,7 +61,7 @@ impl DelaunayTriangles {
         for tri in edges.iter().map(|e| Triangle::new(e.p1,e.p2,point)){
             self.triangles_set.insert(tri);
         }
-        
+        let mut edges:Vec<Edge> = edges.into_iter().collect();
         while let Some(edge) = edges.pop() {
             let mut edge_contained:Vec<Triangle> = Vec::new();
             self.triangles_set.retain(|tri| if tri.contain_edge(&edge){
@@ -70,8 +85,18 @@ impl DelaunayTriangles {
                     edges.push(Edge::new(other_p0,p3));
                     edges.push(Edge::new(other_p1,p2));
                     edges.push(Edge::new(other_p1,p3));
+                }else{
+                    self.triangles_set.insert(edge_contained.pop().unwrap());
+                    self.triangles_set.insert(edge_contained.pop().unwrap());
                 }
+            }else if edge_contained.len()==1{
+                self.triangles_set.insert(edge_contained.pop().unwrap());
             }
+        }
+    }
+    pub fn print_triangles(&self) {
+        for tri in self.triangles_set.iter(){
+            println!("{},{},{},{},{},{}",tri.p1.x,tri.p1.y,tri.p2.x,tri.p2.y,tri.p3.x,tri.p3.y)
         }
     }
 }
@@ -154,9 +179,49 @@ mod tests {
             Point2D::new(3. ,5. ));
         assert!(tri.contain_in_circumscribed(&Point2D::new(3.,4.)));
         assert!(!tri.contain_in_circumscribed(&Point2D::new(2.,1.)));
-        assert!(!tri.contain_in_circumscribed(&Point2D::new(2.,3.)));
+        assert!(!tri.contain_in_circumscribed(&Point2D::new(-2.,3.)));
+    }
+    #[test]
+    fn test_add_point(){
+        use super::*;
+        use rand::Rng;
+        use rand::distributions::{Distribution, Standard};
+        impl Distribution<Point2D> for Standard {
+            fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Point2D {
+                let (rand_x, rand_y) = rng.gen();
+                Point2D {
+                    x: rand_x,
+                    y: rand_y,
+                }
+            }
+        }
+        let mut rng = rand::thread_rng();
+        let mut delau = DelaunayTriangles::new(Triangle::new(
+            Point2D::new(-10. ,10. ),
+            Point2D::new(0. ,-10. ),
+            Point2D::new(10. ,10. )
+            ));
+        delau.add(Point2D::new(0.,0.));
+        let point_num = 50;
+        let random_points:Vec<Point2D>= (0..point_num).map(|_|{
+            Point2D::new(rng.gen::<f32>()*3. ,rng.gen::<f32>()*3.)
+        }).collect();
+        for p in random_points{
+            delau.add(p);
+        }
+        let all_points = delau.into_points();
+        all_points.iter().for_each(|p|{
+            delau.triangles_set.iter().for_each(|tri|{
+                if tri.p1 != *p && tri.p2 != *p && tri.p3 != *p{
+                    assert!(!tri.contain_in_circumscribed(&p));
+                }
+            });
+        });
+        delau.print_triangles();
+        assert!(false);
     }
 }
+
 
 
 fn external_triangle(plist:&[Point2D]) -> Triangle {
