@@ -2,11 +2,15 @@ pub (crate) use crate::{Mat3,MatOps};
 use crate::Point2D;
 use crate::Edge;
 use std::hash::{Hash,Hasher};
+
+/// 二次元上の三角形
+///
+/// 必ず右手周りにデータが保存される。
 #[derive(Eq,Clone,Debug)]
 pub struct Triangle {// 三次元空間上の点 必ず半時計回りに格納される
     pub(crate) p1:Point2D,
-    pub p2:Point2D,
-    pub p3:Point2D,
+    pub(crate) p2:Point2D,
+    pub(crate) p3:Point2D,
 }
 
 impl PartialEq for Triangle {
@@ -78,6 +82,7 @@ impl Triangle{
         let v2 = p3-p1;
         v1.x*v2.y - v1.y*v2.x > 0.
     }
+    /// 三角形を生成する。どんな順番で引数を指定しても必ず右手周りにデータは格納される。
     pub fn new(p1:Point2D,p2:Point2D,p3:Point2D) -> Self {
         if Triangle::is_right_hand(p1, p2, p3) {
             Self{
@@ -93,16 +98,19 @@ impl Triangle{
             }
         }
     }
-    pub fn into_edges(&self) -> [Edge;3]{
+    /// 三角形の辺を生成する。
+    pub fn get_edges(&self) -> [Edge;3]{
         [
             Edge::new(self.p1,self.p2),
             Edge::new(self.p2,self.p3),
             Edge::new(self.p3,self.p1)
         ]
     }
-    pub fn into_points(&self) -> [Point2D;3]{
+    /// 三角形の頂点を生成する。
+    pub fn get_points(&self) -> [Point2D;3]{
         [self.p1,self.p2,self.p3]
     }
+    /// 三角形の外接円内に指定した点が含まれるかどうかの判定を行う.
     pub fn contain_in_circumscribed(&self,p:&Point2D)->bool{
         // http://www.thothchildren.com/chapter/5bdedb4341f88f267247fdd6
         let p1 = self.p1;
@@ -115,17 +123,21 @@ impl Triangle{
         ];
         mat.det()>0.
     }
+    /// 三角形がその辺を含むかどうかを判定する.
     pub fn contain_edge(&self,edge:&Edge)-> bool{
         let (p1,p2) = (edge.p1,edge.p2);
         self.contain_point(&p1) && self.contain_point(&p2)
     }
-    fn contain_point(&self,point:&Point2D) -> bool{
+    /// 三角形の頂点に指定した点が含まれるかどうかを判定する.
+    pub fn contain_point(&self,point:&Point2D) -> bool{
         self.p1 == *point || self.p2==*point || self.p3==*point
     }
 
+    /// 指定した辺に含まれていない点を一つ返す.
+    ///
+    /// 指定した辺が三角形に含まれていない場合、どの頂点を返すかは保証できない
     pub fn find_other_point_by_edge(&self,edge:&Edge) -> Option<Point2D>{
-        // Warning!! Argment edge shold be include in the triangle
-        for p in self.into_points().iter(){
+        for p in self.get_points().iter(){
             if !edge.has_point(p) {
                 return Some(*p)
             }
@@ -133,4 +145,3 @@ impl Triangle{
         return None
     }
 }
-

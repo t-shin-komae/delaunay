@@ -3,11 +3,11 @@ pub mod point;
 pub mod triangle;
 pub mod utils;
 pub mod edge;
-pub use point::*;
-pub use triangle::*;
-pub use edge::*;
+pub use point::Point2D;
+pub use triangle::Triangle;
+pub use edge::Edge;
 use std::collections::HashSet;
-pub (crate) use utils::*;
+use utils::*;
 pub struct DelaunayTriangles{ // TODO ある点周りの三角形を求めやすいデータ構造が理想的
     triangles_set:HashSet<Triangle>,
 }
@@ -36,7 +36,7 @@ impl DelaunayTriangles {
         self.triangles_set
             .retain(|tri|{
                 if tri.contain_in_circumscribed(&point){
-                    let [e1,e2,e3] = tri.into_edges();
+                    let [e1,e2,e3] = tri.get_edges();
                     let mut dup_remove = |e:Edge|{
                         if !edges.insert(e.clone()){
                             edges.remove(&e);
@@ -76,7 +76,7 @@ impl DelaunayTriangles {
                 let other_p0 = edge_contained[0].find_other_point_by_edge(&edge).unwrap();
                 let other_p1 = edge_contained[1].find_other_point_by_edge(&edge).unwrap();
                 if edge_contained[0].contain_in_circumscribed(&other_p1){
-                    let [p2,p3] = edge.into_points();
+                    let [p2,p3] = edge.get_points();
                     let new_tri1 = Triangle::new(other_p0,other_p1,p2);
                     let new_tri2 = Triangle::new(other_p0,other_p1,p3);
                     self.triangles_set.insert(new_tri1);
@@ -171,6 +171,7 @@ mod tests {
             assert!((0. < s+t && s+t < 1.));
         }
     }
+    #[test]
     fn test_contain_in_circumscribed(){
         use super::*;
         let tri = Triangle::new(
@@ -208,7 +209,6 @@ mod tests {
             });
         });
         delau.print_triangles();
-        assert!(false);
     }
 }
 

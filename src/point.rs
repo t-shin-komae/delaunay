@@ -7,15 +7,33 @@ pub trait Point { // 3Dへの拡張性のため用意
     fn distance(self,other:Self) -> f64;
 }
 
+/// 二次元の点を表す.
+/// この構造体は`Copy`を実装している.
 #[derive(Debug,Clone,Copy)]
 pub struct Point2D { // 二次元の点
-    pub x:f64,
-    pub y:f64,
+    pub(crate) x:f64,
+    pub(crate) y:f64,
 }
 
 impl Point2D {
+    /// 点を作る.
     pub fn new(x:f64,y:f64) -> Self {
         Self{x:x,y:y}
+    }
+
+    /// 点のx座標を得る.
+    pub fn get_x(&self) -> f64 {
+        self.x
+    }
+    /// 点のy座標を得る.
+    pub fn get_y(&self) -> f64 {
+        self.y
+    }
+}
+
+impl From<Point2D> for [f64;2] {
+    fn from(item:Point2D) -> Self {
+        [item.x,item.y]
     }
 }
 
