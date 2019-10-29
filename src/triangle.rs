@@ -123,6 +123,14 @@ impl Triangle{
         ];
         mat.det()>0.
     }
+    pub fn include(&self,p:&Point2D) -> bool{
+        let v1 = (self.p2.x-self.p1.x,self.p2.y-self.p1.y);
+        let v2 = (self.p3.x-self.p1.x,self.p3.y-self.p1.y);
+        let pv = (p.x-self.p1.x,p.y-self.p1.y);
+        let s = (v2.1*pv.0-v2.0*pv.1)/(v1.0*v2.1-v2.0*v1.1);
+        let t = (-v1.1*pv.0+v1.0*pv.1)/(v1.0*v2.1-v2.0*v1.1);
+        (0.< s && s < 1.) && (0. < t && t < 1.) && (0. < s+t && s+t < 1.)
+    }
     /// 三角形がその辺を含むかどうかを判定する.
     pub fn contain_edge(&self,edge:&Edge)-> bool{
         let (p1,p2) = (edge.p1,edge.p2);

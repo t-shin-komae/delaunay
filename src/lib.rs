@@ -32,24 +32,36 @@ impl DelaunayTriangles {
     }
 
     pub fn add(&mut self,point:Point2D){
-        let mut edges:HashSet<Edge> =HashSet::new();
-        self.triangles_set
-            .retain(|tri|{
-                if tri.contain_in_circumscribed(&point){
-                    let [e1,e2,e3] = tri.get_edges();
-                    let mut dup_remove = |e:Edge|{
-                        if !edges.insert(e.clone()){
-                            edges.remove(&e);
-                        }
-                    };
-                    dup_remove(e1);
-                    dup_remove(e2);
-                    dup_remove(e3);
-                    return false;
-                }else{
-                    return true
-                }
-            }); // 線形探索なのでO(n)
+        let mut edges:Vec<Edge> = Vec::new();
+        let target_tri = self.triangles_set.iter().find(|tri|tri.include(&point)).expect("Any triangles doesn't include this point").clone();
+        
+        let [e1,e2,e3] = target_tri.get_edges();
+        edges.push(e1);
+        edges.push(e2);
+        edges.push(e3);
+        edges.iter().map(|e| Triangle::new(e.p1,e.p2,point)).for_each(|tri|{
+            self.triangles_set.insert(tri);
+        });
+        self.triangles_set.remove(&target_tri);
+        
+        // let mut edges:HashSet<Edge> =HashSet::new();
+        // self.triangles_set
+        //     .retain(|tri|{
+        //         if tri.contain_in_circumscribed(&point){
+        //             let [e1,e2,e3] = tri.get_edges();
+        //             let mut dup_remove = |e:Edge|{
+        //                 if !edges.insert(e.clone()){
+        //                     edges.remove(&e);
+        //                 }
+        //             };
+        //             dup_remove(e1);
+        //             dup_remove(e2);
+        //             dup_remove(e3);
+        //             return false;
+        //         }else{
+        //             return true
+        //         }
+        //     }); // 線形探索なのでO(n)
             // .filter(|tri| tri.contain_in_circumscribed(&point)) // 線形探索なのでO(n)
             // .for_each(|tri| {
             //           let [e1,e2,e3] = tri.into_edges();
@@ -58,10 +70,10 @@ impl DelaunayTriangles {
             //           edges.insert(e3);
             //     }
             // );
-        for tri in edges.iter().map(|e| Triangle::new(e.p1,e.p2,point)){
-            self.triangles_set.insert(tri);
-        }
-        let mut edges:Vec<Edge> = edges.into_iter().collect();
+        // for tri in edges.iter().map(|e| Triangle::new(e.p1,e.p2,point)){
+        //     self.triangles_set.insert(tri);
+        // }
+        // let mut edges:Vec<Edge> = edges.into_iter().collect();
         while let Some(edge) = edges.pop() {
             let mut edge_contained:Vec<Triangle> = Vec::new();
             self.triangles_set.retain(|tri| if tri.contain_edge(&edge){
@@ -193,11 +205,14 @@ mod tests {
             Point2D::new(10. ,10. )
             ));
         delau.add(Point2D::new(0.,0.));
+        println!("Add origin");
+        println!("{:?}",delau.triangles_set);
         let point_num = 50;
         let random_points:Vec<Point2D>= (0..point_num).map(|_|{
             Point2D::new(rng.gen::<f64>()*3. ,rng.gen::<f64>()*3.)
         }).collect();
         for p in random_points{
+            println!("add point:{:?}",p);
             delau.add(p);
         }
         let all_points = delau.into_points();
